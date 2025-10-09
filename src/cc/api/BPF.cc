@@ -541,15 +541,17 @@ StatusTuple BPF::detach_all_uprobes_for_binary(const std::string& binary_path) {
   // Sanitize the binary path as used in event names
   std::string sanitized_path = sanitize_str(binary_path, &BPF::uprobe_path_validator);
   // Find all uprobes for this binary
-  for (auto& it : uprobes_) {
-    if (it.first.find(sanitized_path) != std::string::npos) {
-      auto res = detach_uprobe_event(it.first, it.second);
+  for (auto it = uprobes_.begin(); it != uprobes_.end();) {
+    if (it->first.find(sanitized_path) != std::string::npos) {
+      auto res = detach_uprobe_event(it->first, it->second);
       if (!res.ok()) {
-        error_msg += "Failed to detach uprobe event " + it.first + ": ";
+        error_msg += "Failed to detach uprobe event " + it->first + ": ";
         error_msg += res.msg() + "\n";
         has_error = true;
       }
-      uprobes_.erase(it.first);
+      it = uprobes_.erase(it);
+    } else {
+      ++it;
     }
   }
   if (has_error)
